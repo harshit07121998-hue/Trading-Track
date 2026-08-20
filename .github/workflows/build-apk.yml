@@ -30,6 +30,15 @@ jobs:
         # above, avoiding any version-mismatch issues.
         run: flutter create . --platforms=android --org com.tradingtracker --project-name trading_tracker
 
+      - name: Set Android compile SDK
+        run: |
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
+
+      - name: Install Android SDK 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-36"
+
       - name: Set app display name
         run: |
           sed -i 's/android:label="trading_tracker"/android:label="Trading Tracker"/' android/app/src/main/AndroidManifest.xml

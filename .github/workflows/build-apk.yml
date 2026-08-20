@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,33 +16,40 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Generate Android platform folder
-        # This project ships lib/ + pubspec.yaml only. This regenerates the
-        # android/ folder using the exact Flutter/Gradle versions installed
-        # above, avoiding any version-mismatch issues.
-        run: flutter create . --platforms=android --org com.tradingtracker --project-name trading_tracker
-
-      - name: Set Android compile SDK
         run: |
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
+          flutter create . \
+            --platforms=android \
+            --org com.tradingtracker \
+            --project-name trading_tracker
 
-      - name: Install Android SDK 36
+      - name: Configure Android SDK 36
         run: |
-          yes | sdkmanager --licenses || true
           sdkmanager "platforms;android-36"
+          sdkmanager "build-tools;35.0.0"
+          yes | sdkmanager --licenses || true
+
+          sed -i \
+            's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' \
+            android/app/build.gradle.kts
 
       - name: Set app display name
         run: |
-          sed -i 's/android:label="trading_tracker"/android:label="Trading Tracker"/' android/app/src/main/AndroidManifest.xml
+          sed -i \
+            's/android:label="trading_tracker"/android:label="Trading Tracker"/' \
+            android/app/src/main/AndroidManifest.xml
 
       - name: Install dependencies
         run: flutter pub get

@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,40 +15,33 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          channel: 'stable'
           cache: true
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Generate Android platform folder
-        run: |
-          flutter create . \
-            --platforms=android \
-            --org com.tradingtracker \
-            --project-name trading_tracker
-
-      - name: Configure Android SDK 36
-        run: |
-          sdkmanager "platforms;android-36"
-          sdkmanager "build-tools;35.0.0"
-          yes | sdkmanager --licenses || true
-
-          sed -i \
-            's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' \
-            android/app/build.gradle.kts
+        # This project ships lib/ + pubspec.yaml only. This regenerates the
+        # android/ folder using the exact Flutter/Gradle versions installed
+        # above, avoiding any version-mismatch issues.
+        run: flutter create . --platforms=android --org com.tradingtracker --project-name trading_tracker
 
       - name: Set app display name
         run: |
-          sed -i \
-            's/android:label="trading_tracker"/android:label="Trading Tracker"/' \
-            android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="trading_tracker"/android:label="Trading Tracker"/' android/app/src/main/AndroidManifest.xml
+
+      - name: Bump compileSdk / targetSdk
+        # flutter_plugin_android_lifecycle (pulled in by file_picker) requires
+        # compiling against API 36+. flutter create's default template may
+        # set an older value depending on the Flutter version, so force it.
+        run: |
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts
+          cat android/app/build.gradle.kts | grep -E "compileSdk|targetSdk"
 
       - name: Install dependencies
         run: flutter pub get

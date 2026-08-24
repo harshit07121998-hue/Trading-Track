@@ -62,28 +62,8 @@ jobs:
             exit 0
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-          cat > android/key.properties << PROPS
-storePassword=$KEYSTORE_PASSWORD
-keyPassword=$KEY_PASSWORD
-keyAlias=$KEY_ALIAS
-storeFile=upload-keystore.jks
-PROPS
-          cat > /tmp/signing_block.txt << 'BLOCK'
-    val keystoreProperties = java.util.Properties()
-    val keystorePropertiesFile = rootProject.file("key.properties")
-    if (keystorePropertiesFile.exists()) {
-        keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
-    }
-
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String?
-        }
-    }
-BLOCK
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          echo "ICAgIHZhbCBrZXlzdG9yZVByb3BlcnRpZXMgPSBqYXZhLnV0aWwuUHJvcGVydGllcygpCiAgICB2YWwga2V5c3RvcmVQcm9wZXJ0aWVzRmlsZSA9IHJvb3RQcm9qZWN0LmZpbGUoImtleS5wcm9wZXJ0aWVzIikKICAgIGlmIChrZXlzdG9yZVByb3BlcnRpZXNGaWxlLmV4aXN0cygpKSB7CiAgICAgICAga2V5c3RvcmVQcm9wZXJ0aWVzLmxvYWQoamF2YS5pby5GaWxlSW5wdXRTdHJlYW0oa2V5c3RvcmVQcm9wZXJ0aWVzRmlsZSkpCiAgICB9CgogICAgc2lnbmluZ0NvbmZpZ3MgewogICAgICAgIGNyZWF0ZSgicmVsZWFzZSIpIHsKICAgICAgICAgICAga2V5QWxpYXMgPSBrZXlzdG9yZVByb3BlcnRpZXNbImtleUFsaWFzIl0gYXMgU3RyaW5nPwogICAgICAgICAgICBrZXlQYXNzd29yZCA9IGtleXN0b3JlUHJvcGVydGllc1sia2V5UGFzc3dvcmQiXSBhcyBTdHJpbmc/CiAgICAgICAgICAgIHN0b3JlRmlsZSA9IGtleXN0b3JlUHJvcGVydGllc1sic3RvcmVGaWxlIl0/LmxldCB7IGZpbGUoaXQgYXMgU3RyaW5nKSB9CiAgICAgICAgICAgIHN0b3JlUGFzc3dvcmQgPSBrZXlzdG9yZVByb3BlcnRpZXNbInN0b3JlUGFzc3dvcmQiXSBhcyBTdHJpbmc/CiAgICAgICAgfQogICAgfQo=" | base64 -d > /tmp/signing_block.txt
           sed -i '/^android {$/r /tmp/signing_block.txt' android/app/build.gradle.kts
           sed -i 's/signingConfig = signingConfigs.getByName("debug")/signingConfig = signingConfigs.getByName("release")/' android/app/build.gradle.kts
 
